@@ -1,71 +1,107 @@
-# Simulación de un sistema bancario
+# sistema_bancario_corregido.py
+# Simulación simple de un banco: cola de clientes, depósitos, retiros y consulta de saldo.
 
-# Definición de la clase CuentaBancaria
 class CuentaBancaria:
-    def __init__(self, nombre_cliente, saldo_inicial=0):
+    def __init__(self, nombre_cliente, saldo_inicial=0.0):
         self.nombre_cliente = nombre_cliente
-        self.saldo = saldo_inicial
+        self.saldo = float(saldo_inicial)
 
     def depositar(self, cantidad):
-        if cantidad > 0:
-            self.saldo += cantidad
-            print(f"Depósito de {cantidad} realizado con éxito. Nuevo saldo: {self.saldo}")
-        else:
-            print("La cantidad a depositar debe ser positiva.")
+        try:
+            cantidad = float(cantidad)
+        except (TypeError, ValueError):
+            return False, "Cantidad inválida."
+        if cantidad <= 0:
+            return False, "La cantidad a depositar debe ser positiva."
+        self.saldo += cantidad
+        return True, f"Depósito de {cantidad:.2f} realizado. Nuevo saldo: {self.saldo:.2f}"
 
     def retirar(self, cantidad):
+        try:
+            cantidad = float(cantidad)
+        except (TypeError, ValueError):
+            return False, "Cantidad inválida."
+        if cantidad <= 0:
+            return False, "La cantidad a retirar debe ser positiva."
         if cantidad > self.saldo:
-            print("Fondos insuficientes para realizar el retiro.")
-        elif cantidad > 0:
-            self.saldo -= cantidad
-            print(f"Retiro de {cantidad} realizado con éxito. Nuevo saldo: {self.saldo}")
-        else:
-            print("La cantidad a retirar debe ser positiva.")
+            return False, "Fondos insuficientes."
+        self.saldo -= cantidad
+        return True, f"Retiro de {cantidad:.2f} realizado. Nuevo saldo: {self.saldo:.2f}"
 
     def consultar_saldo(self):
         return self.saldo
 
 
-# Función para simular el procesamiento de clientes en la cola
-def proceso_clientes(cola):
-    while cola:
-        cliente = cola.pop(0)  # atender al primer cliente de la cola
-        print(f"\nAtendiendo a {cliente.nombre_cliente}...")
-
-        # Simulación de operaciones
-        print("Realizando operaciones:")
-        cliente.depositar(100)  # depósito ficticio de 100
-        cliente.retirar(50)     # retiro ficticio de 50
-
-        print(f"Saldo final de {cliente.nombre_cliente}: {cliente.consultar_saldo()}")
-
-        # Mostrar el estado de la cola
-        mostrar_estado_cola(cola)
-
-
-# Función para mostrar el estado actual de la cola
 def mostrar_estado_cola(cola):
     if cola:
         print("\nClientes restantes en la cola:")
-        for cliente in cola:
-            print(f"- {cliente.nombre_cliente}")
+        for c in cola:
+            print(f" - {c.nombre_cliente} (saldo: {c.saldo:.2f})")
     else:
         print("\nNo hay más clientes en la cola. ¡Todos atendidos!")
 
 
-# Función principal para crear clientes y simular el banco
-def simular_banco():
-    # Crear algunos clientes con cuentas bancarias
+def proceso_clientes_automatico(cola):
+    """Simula operaciones automáticas (depósito 100, retiro 50) para cada cliente."""
+    while cola:
+        cliente = cola.pop(0)
+        print(f"\nAtendiendo a {cliente.nombre_cliente} (saldo inicial: {cliente.saldo:.2f})")
+        ok, msg = cliente.depositar(100)
+        print(msg)
+        ok, msg = cliente.retirar(50)
+        print(msg)
+        print(f"Saldo final de {cliente.nombre_cliente}: {cliente.consultar_saldo():.2f}")
+        mostrar_estado_cola(cola)
+
+
+def proceso_clientes_interactivo(cola):
+    """Permite al usuario elegir operaciones para cada cliente mientras se atiende."""
+    while cola:
+        cliente = cola.pop(0)
+        print(f"\nAtendiendo a {cliente.nombre_cliente} (saldo actual: {cliente.saldo:.2f})")
+        while True:
+            print("\nOperaciones disponibles:")
+            print(" 1) Depositar")
+            print(" 2) Retirar")
+            print(" 3) Consultar saldo")
+            print(" 4) Finalizar atención y pasar al siguiente cliente")
+            elec = input("Elige opción (1-4): ").strip()
+            if elec == "1":
+                cantidad = input("Cantidad a depositar: ").strip()
+                ok, msg = cliente.depositar(cantidad)
+                print(msg)
+            elif elec == "2":
+                cantidad = input("Cantidad a retirar: ").strip()
+                ok, msg = cliente.retirar(cantidad)
+                print(msg)
+            elif elec == "3":
+                print(f"Saldo actual: {cliente.consultar_saldo():.2f}")
+            elif elec == "4":
+                print(f"Finalizando atención de {cliente.nombre_cliente}. Saldo final: {cliente.consultar_saldo():.2f}")
+                break
+            else:
+                print("Opción inválida. Intenta nuevamente.")
+        mostrar_estado_cola(cola)
+
+
+def simular_banco(modo="auto"):
+    # Crear algunos clientes
     cliente1 = CuentaBancaria("Juan Perez", 500)
     cliente2 = CuentaBancaria("Maria Gonzalez", 300)
-    cliente3 = CuentaBancaria("Carla Díaz", 700)
+    cliente3 = CuentaBancaria("Carla Diaz", 700)
 
-    # Crear la cola de clientes
     cola = [cliente1, cliente2, cliente3]
 
-    # Procesar clientes en la cola
-    proceso_clientes(cola)
+    if modo == "auto":
+        proceso_clientes_automatico(cola)
+    else:
+        proceso_clientes_interactivo(cola)
 
 
-# Ejecutar la simulación
-simular_banco()
+if __name__ == "__main__":
+    print("Simulación de Banco")
+    modo = input("Modo automático? (s = sí, n = no) [s]: ").strip().lower()
+    if modo == "n":
+        simular_banco(modo="interactivo")
+    else:
+        simular_banco(modo="auto")
